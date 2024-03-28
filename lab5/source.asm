@@ -5,13 +5,35 @@
     sub_input db 80, ?, 82 dup (?)
     str_prefix db 'Enter string: $'
     sub_prefix db 0dh, 0ah, 'Enter substring: $'
-    msg_yes db 0dh, 0ah, 'YES$'
+    msg_yes db 0dh, 0ah, 'YES', 0dh, 0ah, 'Index of first entrance: $'
     msg_no db 0dh, 0ah, 'NO$'
     msg_sub_over_error db 0dh, 0ah, 'Error: Substring is longer than string$'
-    ; output_idx db 0dh, 0ah, 'Index of first entrance: ', '$'
+    entrance_idx dw ?
 DATA_S ends
 CODE_S segment
     assume cs: CODE_S, ds: DATA_S
+    ; Decimal number output proc
+    WRITENUM proc
+        mov ax, entrance_idx
+        mov cx, 10
+        mov bx, 0
+        addition_loop:
+            xor dx, dx
+            div cx
+            add dl, '0'
+            push dx
+            inc bx
+            cmp ax, 0
+            jne addition_loop
+        print_loop:
+            pop dx
+            mov ah, 02h
+            int 21h
+            dec bx
+            cmp bx, 0
+            jne print_loop
+        ret
+    WRITENUM endp
     start:
         mov ax, DATA_S  
         mov ds, ax
@@ -41,20 +63,28 @@ CODE_S segment
         lea si, str_input + 2     ; String offset
         lea di, sub_input + 2     ; Substring offset
         
+        mov dh, 0           ; Index of current char
+        mov dl, 0           ; Index of first entrance
         mov bl, 0           ; Number of characters found in a row
         mov cl, str_len     ; LOOP (CX)
         next_val:
+            inc dh          ; Increase char index
             mov al, [si]
             mov ah, [di + bx]
-            inc si
+            inc si          ; Increase char address
             cmp al, ah      ; Comparing current string char
                             ; with indexed substring char
             je equal
         not_equal:
             mov bl, 0       ; Reset counter
+            mov dl, 0       ; Reset entrance index
             loop next_val
             jmp no          ; Wasnt found
         equal:
+            cmp dl, 0       
+            jne skip_index  ; If char is not entrance
+                mov dl, dh 
+            skip_index:
             inc bl          ; Increase substring counter
             cmp bl, sub_len ; Substr counter == Length of substring?
             jz yes
@@ -66,8 +96,14 @@ CODE_S segment
             jmp quit
         yes:
             mov ah, 09h
+            push dx
             lea dx, msg_yes
             int 21h
+            pop dx
+            mov ah, 0h          ; AX = 00 + entrance_idx
+            mov al, dl
+            mov entrance_idx, ax
+            call WRITENUM
             jmp quit
         sub_over_error:
             mov ah, 09h
