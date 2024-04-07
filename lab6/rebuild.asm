@@ -1,6 +1,6 @@
 DATA_S SEGMENT
-    MSG1 DB 0DH, 0AH, "ENTER FIRST STROKE :$", 0DH, 0AH
-    MSG2 DB 0DH, 0AH, "ENTER SECOND STROKE :$", 0DH, 0AH
+    MSG1 DB 0DH, 0AH, "ENTER FIRST STROKE : $", 0DH, 0AH
+    MSG2 DB 0DH, 0AH, "ENTER SECOND STROKE : $", 0DH, 0AH
     MSG_FIRST DB 0DH, 0AH, "FIRST STROKE CONTAINS SECOND STROKE$", 0DH, 0AH
     MSG_SECOND DB 0DH, 0AH, "SECOND STROKE CONTAINS FIRST STROKE$", 0DH, 0AH
     MSG_COUNT DB 0DH, 0AH, "HOW MANY TIMES: $", 0DH, 0AH
@@ -70,29 +70,30 @@ CODE_S SEGMENT
         CMP AX, BX
         JNB CMP_LOOP
         SWAP:   ; SWAPPING STR1 AND STR2
-        MOV SWAPPED, 1H
-        XCHG SI, DI
-        XCHG AX, BX
+            MOV SWAPPED, 1H
+            XCHG SI, DI
+            XCHG AX, BX
         CMP_LOOP:
-        ADD SI, STARTIDX ; ADDR OF STR = PREV ADDR + START
-        CALL FIND_SUBSTR
+            ADD SI, STARTIDX ; ADDR OF STR = PREV ADDR + START
+            CALL FIND_SUBSTR
         PROCESSING:
-        MOV DH, 0
-        MOV DL, ENTRYIDX
-        DEC DX      ; ENTRYIDX
-        CMP DX, -1  ; NO MORE ENTRANCES
+            MOV DH, 0
+            MOV DL, ENTRYIDX
+            DEC DX      ; ENTRYIDX
+            CMP DX, -1  ; NO MORE ENTRANCES
         JE EXIT 
-        INC COUNT
-        MOV STARTIDX, BX
-        ADD STARTIDX, DX ; STARTIDX = ENTRYIDX + SUBSTR LENGTH
-        PUSH AX
-        SBB AX, BX 
-        CMP CX, AX ; INDEX OF START < LENGTH OF STR - SUBSTR
-        JA EXIT
-        POP AX
-        JMP CMP_LOOP
+            INC COUNT
+            MOV STARTIDX, BX
+            ADD STARTIDX, DX ; STARTIDX = ENTRYIDX + SUBSTR LENGTH
+            PUSH CX
+            MOV CX, STARTIDX
+            ADD CX, BX      ; CX = STARTIDX + SUBLEN 
+            CMP AX, CX ; STRLEN >= STARTIDX + SUBLEN?
+            POP CX
+        JB EXIT
+            JMP CMP_LOOP
         EXIT:
-        RET
+            RET
     COUNT_ENTRANCES ENDP
     FIND_SUBSTR PROC
         PUSHA
