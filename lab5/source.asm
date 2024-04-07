@@ -78,6 +78,9 @@ CODE_S segment
         not_equal:
             mov bl, 0       ; Reset counter
             mov dl, 0       ; Reset entrance index
+            mov ah, [di]
+            cmp al, ah
+            je equal
             loop next_val
             jmp no          ; Wasnt found
         equal:
